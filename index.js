@@ -19,6 +19,14 @@ const GC_MONGO_URL ="mongodb+srv://movieuser:Movie1234@ryanmovies.uyzgj.mongodb.
 var PORT = process.env.PORT || 5000;
 const ObjectID = require('mongodb').ObjectID;
 mongoose.connect(GC_MONGO_URL, { useUnifiedTopology: true, useNewUrlParser: true });
+const GC_USERS = [
+	{"username":"admin","password":"Test1234","fullname":"Admin","birthday":"1985-01-01T00:00:00.000Z","email":"admin@test.com","favorites":[1,8,3],"roleId":2},
+	{"username":"ryan","password":"Test1234","fullname":"Ryan Tester","birthday":"1985-03-03T00:00:00.000Z","email":"ryan@test.com","favorites":[2,4],"roleId":1},
+	{"username":"test","password":"Test1234","fullname":"Ryan Tester","birthday":"1985-03-03T00:00:00.000Z","email":"tester@test.com","favorites":[],"roleId":1},
+	{"username":"bob","password":"Test1234","fullname":"Ryan Tester","birthday":"1985-03-03T00:00:00.000Z","email":"bob@test.com","favorites":[],"roleId":1},
+	{"username":"june","password":"Test1234","fullname":"Ryan Tester","birthday":"1985-03-03T00:00:00.000Z","email":"june@test.com","favorites":[],"roleId":1}
+];
+
 
 app.use(session({secret:'XASDASDA'}));
 var ssn;
@@ -31,6 +39,22 @@ app.use(express.static("public"))
 app.use(function (err, req, res, next){
     console.log(err)
     next(err)
+});
+app.get ("/", async (req, res) =>{
+	res.send("<h1>Hello from Heroku</h1>");
+	
+});
+app.get("/seed", (req, res)=> {
+    MongoClient.connect(MONGODB_URI, {useUnifiedTopology: true}, function (err, db) {
+        if (err)
+            throw err;
+        var dbo = db.db("training");
+	
+		GC_USERS.forEach ((obj)=>{
+			dbo.collection("users").insertOne(obj);
+		});
+    });
+	res.end("done");
 });
 app.get("/movies", async (req, res) =>{
 	mongoose.model('movies').find((err,movies)=>{
