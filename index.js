@@ -48,7 +48,7 @@ app.get("/seed", (req, res)=> {
     MongoClient.connect(MONGODB_URI, {useUnifiedTopology: true}, function (err, db) {
         if (err)
             throw err;
-        var dbo = db.db("training");
+        var dbo = db.db("movies");
 	
 		GC_USERS.forEach ((obj)=>{
 			dbo.collection("users").insertOne(obj);
