@@ -16,7 +16,7 @@ const app = express();
 //const GC_MONGO_URL = "mongodb://localhost:27017/movies";
 //const GC_MONGO_URL = "mongodb+srv://appjedi:Data2021@cluster0.aga82.mongodb.net/training?retryWrites=true&w=majority";
 const GC_MONGO_URL ="mongodb+srv://movieuser:Movie1234@ryanmovies.uyzgj.mongodb.net/movies?retryWrites=true&w=majority";
-
+var PORT = process.env.PORT || 5000;
 const ObjectID = require('mongodb').ObjectID;
 mongoose.connect(GC_MONGO_URL, { useUnifiedTopology: true, useNewUrlParser: true });
 
@@ -475,6 +475,6 @@ app.get('/users', (req, res) => {
 	}
 })
 
-app.listen(8080, () => {
-    console.log('Your app is listening on port 8080.');
+app.listen(PORT, () => {
+    console.log('Your app is listening on port '+PORT);
 })
