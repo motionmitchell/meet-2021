@@ -27,7 +27,6 @@ const GC_USERS = [
 	{"username":"june","password":"Test1234","fullname":"Ryan Tester","birthday":"1985-03-03T00:00:00.000Z","email":"june@test.com","favorites":[],"roleId":1}
 ];
 
-
 app.use(session({secret:'XASDASDA'}));
 var ssn;
 app.use(bodyParser.urlencoded({ extended: false}));
@@ -44,16 +43,12 @@ app.get ("/", async (req, res) =>{
 	res.send("<h1>Hello from Heroku</h1>");
 	
 });
-app.get("/seed", (req, res)=> {
-    MongoClient.connect(MONGODB_URI, {useUnifiedTopology: true}, function (err, db) {
-        if (err)
-            throw err;
-        var dbo = db.db("movies");
-	
+app.get("/seed",async (req, res)=> {
+    
 		GC_USERS.forEach ((obj)=>{
-			dbo.collection("users").insertOne(obj);
+			saveUser(obj);
 		});
-    });
+   
 	res.end("done");
 });
 app.get("/movies", async (req, res) =>{
@@ -410,11 +405,6 @@ app.get("/user/:un", async (req, res) =>{
 		res.send(user);
 	})
 });
-
-
-
-
-
 
 app.get("/movies/title/:title", async (req, res) =>{
 	const title = req.params.title;

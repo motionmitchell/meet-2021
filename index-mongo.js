@@ -7,7 +7,9 @@ const mongodb = require('mongodb');
 var cors = require('cors');
 const MongoClient = require('mongodb').MongoClient;
 const app = express();
-const GC_MONGO_URL = "mongodb://localhost:27017/";
+//nst GC_MONGO_URL = "mongodb://localhost:27017/";
+const GC_MONGO_URL ="mongodb+srv://movieuser:Movie1234@ryanmovies.uyzgj.mongodb.net/movies?retryWrites=true&w=majority";
+
 app.use(session({secret:'XASDASDA'}));
 var ssn ;
 app.use(bodyParser.urlencoded({ extended: false}));
@@ -46,9 +48,7 @@ app.get("/seed", (req, res)=> {
 		GC_MOVIES.forEach ((obj)=>{
 			dbo.collection("movies").insertOne(obj);
 		});
-		GC_USERS.forEach ((obj)=>{
-			dbo.collection("users").insertOne(obj);
-		});
+		
     });
 	res.end("done");
 });
