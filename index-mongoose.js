@@ -12,6 +12,7 @@ const jwt = require('jsonwebtoken');
 const auth =require('./auth');
 const crypto = require('crypto');
 const Bcrypt = require("bcryptjs");
+const fs = require ('fs');
 const app = express();
 //const GC_MONGO_URL = "mongodb://localhost:27017/movies";
 //const GC_MONGO_URL = "mongodb+srv://appjedi:Data2021@cluster0.aga82.mongodb.net/training?retryWrites=true&w=majority";
@@ -23,19 +24,28 @@ mongoose.connect(GC_MONGO_URL, { useUnifiedTopology: true, useNewUrlParser: true
 app.use(session({secret:'XASDASDA'}));
 var ssn;
 app.use(bodyParser.urlencoded({ extended: false}));
-
+app.use(bodyParser.json());
 app.use(cors());
 //app.use(morgan('common'));
 app.use(express.static("public"))
-
+var GV_USERS=null;
 app.use(function (err, req, res, next){
     console.log(err)
     next(err)
 });
+loadData();
+app.get("/test", async (req, res) =>{
+	
+	res.send ("2021-07-24");
+	//res.end();
+});
 app.get("/movies", async (req, res) =>{
+	//res.send (GV_USERS);
+	
 	mongoose.model('movies').find((err,movies)=>{
 		res.send(movies);
 	});
+	
 });
 app.get("/movie/title/:title", async (req, res) =>{
 	const title = req.params.title;
@@ -44,6 +54,16 @@ app.get("/movie/title/:title", async (req, res) =>{
 		res.send(movie);
 	});
 });
+app.get("/movie/id/:id", async (req, res) =>{
+	const id = req.params.id;
+	const m = await getMovieById(id);
+	res.send(m);
+	
+});
+async function getMovieById (id){
+	return await mongoose.model('movies').findOne ({id: id});
+	
+}
 app.get("/movies/genre/:genre", async (req, res) =>{
 	const genre = req.params.genre;
 	console.log("id: "+genre)
@@ -78,9 +98,9 @@ app.get('/users/register', (req, res, next) => {
 
 app.get('/login', (req, res, next) => {
    
-    const form = '<h1>Login Page</h1><form method="POST" action="/users/login">\
-    Enter Username:<br><input type="text" name="email">\
-    <br>Enter ID:<br><input type="text" name="password">\
+    const form = '<h1>Login Page </h1><p>2021-07-27</p><form method="POST" action="/users/login">\
+    Username:<br><input type="text" name="email">\
+    <br>Password:<br><input type="text" name="password">\
     <br><br><input type="submit" value="Submit"></form>';
 
     res.send(form);
@@ -115,6 +135,11 @@ app.post(
 	  });
 	}
   );
+  function loadData(){
+	const input= fs.readFileSync("./data/users.json",'utf8');
+	//console.log (input);
+	GV_USERS= data = JSON.parse(input);	
+}
 	function validateUser (user)
 	{
 		let errors=[]
@@ -136,9 +161,9 @@ app.post(
 		}
 		return errors;
 	}
-  function validateEmail(email) {
-    const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-    return re.test(String(email).toLowerCase());
+	function validateEmail(email) {
+		const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+		return re.test(String(email).toLowerCase());
 	}
 	function isValidDate(str){
 		// STRING FORMAT yyyy-mm-dd
@@ -148,7 +173,7 @@ app.post(
 		var m = str.match(/(\d{4})-(\d{2})-(\d{2})/);
 		
 		// STR IS NOT FIT m IS NOT OBJECT
-		if( m === null || typeof m !== 'object'){return false;}				
+		if(m=== null || typeof m !== 'object'){return false;}				
 		
 		// CHECK m TYPE
 		if (typeof m !== 'object' && m !== null && m.size!==3){return false;}
@@ -159,7 +184,7 @@ app.post(
 		const daysPerMonth = [31,28,31,30,31,30,31,30,31,30,31,31];
 		
 		// YEAR CHECK
-		if( (m[1].length < 4) || m[1] < minYear || m[1] > thisYear){ret = false;}
+		if((m[1].length < 4) || m[1] < minYear || m[1] > thisYear){ret = false;}
 		// MONTH CHECK			
 		const mon = parseInt(m[2])-1;
 		let days = daysPerMonth[mon];
@@ -167,10 +192,10 @@ app.post(
 		{
 			days=29;
 		}
-		if( (m[2].length < 2) || m[2] < 1 || m[2] > 12){ret = false;}
+		if((m[2].length < 2) || m[2] < 1 || m[2] > 12){ret = false;}
 		// DAY CHECK
-		if( (m[3].length < 2) || m[3] < 1 || m[3] > days){ret = false;}
-		
+		if((m[3].length < 2) || m[3] < 1 || m[3] > days){ret = false;}
+
 		if (ret)
 		{
 			let dt = new Date();
@@ -188,29 +213,81 @@ app.post(
 	}
 
 	function leapYear(year)
-{
-  return ((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0);
-}
-  async function saveUser (user)
-  {
-	  console.log ("SAVE USER:");
-	  const md5sum = crypto.createHash('md5');
-	  user.password = md5sum.update(user.password).digest('hex');
-	  console.log (user);
+	{
+		return ((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0);
+	}
+	async function saveUser (user)
+	{
+		console.log ("SAVE USER:");
+		const md5sum = crypto.createHash('md5');
+		user.password = md5sum.update(user.password).digest('hex');
+		console.log (user);
 
-	  await mongoose.model('users').create(user);
+		await mongoose.model('users').create(user);
 
-	
-	return;
-  } 
+		return;
+	} 
   app.get ("/user/id", (req, res, next) => {
-	res.send (ssn.userId);
+	  ssn=req.session;
+	  ssn.userId = undefined;
+	  ssn.token = undefined;
+	res.send ("logged out");
   });
+   app.get ("/user/logout", (req, res, next) => {
+	
+		//  ssn=req.session;
+	  ssn.userId = undefined;
+	  ssn.token = undefined;
+	res.send ("logged out");
+  });
+  app.get(
+	'/users/auth/:u/:p',
+	async (req, res, next) => {
+	   const user = {password: req.params.p, email: req.params.u};
+	   console.log (user);
+	 // console.log(req.body);
+	  passport.authenticate(
+		'login',
+		async (err, user, info) => {
+		  try {
+			  console.log ("auth done");
+			  //console.log(user);
+			if (err || !user) {
+			//  const error = new Error('An error occurred.');
+				return res.json({Error: err});
+			 // return next(error);
+			}
+  
+			req.login(
+			  user,
+			  { session: false },
+			  async (error) => {
+				if (error) return next(error);
+  
+				const body = { _id: user._id, email: user.email };
+				const token = jwt.sign({ user: body }, 'TOP_SECRET');
+				ssn=req.session;
+				console.log ("userId: "+user._id)
+				ssn.user=user;
+				
+				ssn.userId =  user._id;
+				ssn.token=token;
+				const retval = {token:token, user:user}
+				return res.json({ token,user });
+			  }
+			);
+		  } catch (error) {
+			return next(error);
+		  }
+		}
+	  )(req, res, next);
+	}
+  );
   app.post(
 	'/users/login',
 	async (req, res, next) => {
 	   // const user = {password: req.body.password, email: req.body.email};
-	   // console.log(user);
+	  console.log(req.body);
 	  passport.authenticate(
 		'login',
 		async (err, user, info) => {
@@ -232,8 +309,13 @@ app.post(
 				const body = { _id: user._id, email: user.email };
 				const token = jwt.sign({ user: body }, 'TOP_SECRET');
 				ssn=req.session;
+				console.log ("userId: "+user._id)
+				ssn.user=user;
+				
 				ssn.userId =  user._id;
-				return res.json({ token });
+				ssn.token=token;
+				const retval = {token:token, user:user}
+				return res.json({ token,user });
 			  }
 			);
 		  } catch (error) {
@@ -243,6 +325,20 @@ app.post(
 	  )(req, res, next);
 	}
   );
+app.get("/user", async (req, res) =>{
+	try {
+		//ssn=req.session;
+		if (ssn.userId == undefined)
+		{
+			res.send ("no user logged in");
+		}else {
+			const u = await getCurrentUser();
+			res.send (u);
+		}
+	}catch (e){
+		res.send ("no user");
+	}
+});
 app.post("/users/registerOld", async (req, res) =>{
 	// /users/register?username=june17&email=june17@test.com&fullname=June17 Test&birthday=1990-01-02&password=Test1234;
 	console.log (req.body);
@@ -259,21 +355,24 @@ app.post("/users/registerOld", async (req, res) =>{
 	res.send(user);
 });
 app.post("/users/update", async (req, res) =>{
-	const id = req.body.id;
+	const id = req.body._id;
+	console.log(req.body);
 	const userUpdate = {
-		
-		username: req.body.username,
 		email: req.body.email,
 		fullname:req.body.fullname,
-		birthday:req.body.birthday,
+		birthday:req.body.birthdate,
 		password: req.body.password,
-		favorites:[]
+		favorites:req.body.favorites
 	};
 	console.log (userUpdate);
 	const result = await mongoose.model('users').findOne({_id: ObjectID(id)},(err,user)=>{
-		user.username=userUpdate.username;
+		
+		//if (user.password !== userUpdate.password)
+	//	user.username=userUpdate.username;
 		user.email=userUpdate.email;
-		user.password=userUpdate.password;
+		user.fullname=userUpdate.fullname;
+		
+		//user.password=userUpdate.password;
 		user.birthday=userUpdate.birthday;
 //console.log (movie);
 		user.save((err)=>{
@@ -287,46 +386,69 @@ app.post("/users/update", async (req, res) =>{
 	});
 	})
 });
-app.get("/user/movie/add/:un/:id", async (req, res) =>{
-	const un = req.params.un;
-	const id= req.params.id;
-	
-	mongoose.model('users').findOne ({username:un},(err,user)=>{
-			user.favorites.push (parseInt(id));
+app.get("/user/movie/add/:id", async (req, res) =>{
+	const user = await getCurrentUser();
+	if (user==null)
+	{
+		res.end("no user");
+		return;
+	}
+	const id= parseInt(req.params.id);
+	console.log (user);
+	mongoose.model('users').findOne ({email:user.email},(err,user)=>{
+			for (let i in user.favorites){
+				const val=user.favorites[i];
+				if(val==id)
+				{
+					const resp = {message: "Already a Favorite"};
+					res.send(resp);
+					//res.end();
+					return;
+				}					
+			}
+			user.favorites.push (id);
 //console.log (movie);
 			user.save((err)=>{
 				if (err)
 				{
 					console.log (err);
-					res.end("Favorite not added");
+					const resp = {message: "Favorite not added"};
+					res.send(resp);
 				}else{
-					res.end("Favorite Added");
+					const resp = {message: "Favorite Added"};
+					ssn.user=user;
+					res.send(resp);
 				}
 		});
 	});
 })
-app.get("/user/movie/remove/:un/:id", async (req, res) =>{
-	const un = req.params.un;
+app.get("/user/movie/remove/:id", async (req, res) =>{
+	const un = await getCurrentUser();
 	const id= parseInt(req.params.id);
 	
-	mongoose.model('users').findOne ({username:un},(err,user)=>{
+	mongoose.model('users').findOne ({email:un.email},(err,user)=>{
 			let fav=[];
-			user.favorites.forEach ((val)=>{
+			for (let i in user.favorites)
+			{
+				let val = user.favorites[i];
 				if (val!==id)
 				{
 					fav.push (val);
 				}
-			})
+			}
 
 			user.favorites=fav;
-//console.log (movie);
+console.log (user);
 			user.save((err)=>{
 				if (err)
 				{
 					console.log (err);
-					res.end("Favorite not removed");
+					const msg={message: "Favorite not removed"};
+					res.send(msg);
 				}else{
-					res.end("Favorite removed");
+					ssn.user=user;
+					const msg={message: "Favorite removed"};
+					res.send(msg);
 				}
 		});
 	});
@@ -338,11 +460,12 @@ app.get("/user/unreg/:un", async (req, res) =>{
 		res.send ("unregistered");
 	})
 })
-app.get("/user/delete/:un", (req, res)=> {
-	const un = req.params.un+"";
-	//console.log("ID: "+id);
-	mongoose.model('users').deleteOne({username:un},(err,u)=>{
-		res.end("user deleted");
+app.get("/user/delete",async (req, res)=> {
+	const un = await getCurrentUser()
+	console.log("delete: "+un.email);
+	mongoose.model('users').findOneAndRemove({email:un.email},(err,u)=>{
+		
+		res.redirect ("/user/logout");
 	});
 });
 app.get("/users", (req, res)=>{
@@ -386,11 +509,6 @@ app.get("/user/:un", async (req, res) =>{
 		res.send(user);
 	})
 });
-
-
-
-
-
 
 app.get("/movies/title/:title", async (req, res) =>{
 	const title = req.params.title;
@@ -448,7 +566,7 @@ app.get('/secreturl', (req, res) => {
     res.send('This is a secret url with super top-secret content.');
 })
 
-function getCurrentUser ()
+async function getCurrentUser ()
 {
 	try {
 		const user=ssn.user;
@@ -456,7 +574,23 @@ function getCurrentUser ()
 			//res.end("not logged in");
 			return null;
 		}
-		return user;
+		let favorites = [];
+			
+		for (let i in user.favorites)
+		{
+			const m = await getMovieById(parseInt(user.favorites[i]));
+			favorites.push (m);
+			
+		}
+		const newUser = {
+			_id: user._id,
+			fullname: user.fullname,
+			birthday: user.birthday,
+			email:user.email,
+			favoritesId:user.favorites,
+			favorites: favorites
+		};
+		return newUser;
 	}catch (e){
 		return null;
 	}
